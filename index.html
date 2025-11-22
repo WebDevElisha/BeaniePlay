@@ -86,7 +86,7 @@
       margin: 3px 0;
       padding: 4px 6px;
       border-radius: 6px;
-      cursor: pointer;
+      cursor: move;
     }
     .file-item:hover {
       background: #000;
@@ -110,6 +110,41 @@
     audio { display: none; width: 95%; max-width: 900px; }
 
     .hidden { display: none !important; }
+
+    /* Playlist name popup */
+    .popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: grid;
+      place-items: center;
+      z-index: 1000;
+    }
+    .popup-content {
+      background: #fff;
+      color: #111;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      width: 300px;
+    }
+    .popup-content input {
+      width: 90%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .popup-content button {
+      margin-top: 14px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .popup-content .confirm { background: var(--red); color: #fff; }
+    .popup-content .cancel { background: #eee; color: #333; margin-left: 10px; }
   </style>
 </head>
 <body>
@@ -139,6 +174,18 @@
     <p class="now-playing" id="nowPlaying"></p>
     <audio id="audioPlayer" controls></audio>
   </div>
+
+  <!-- Playlist name popup -->
+  <div class="popup hidden" id="popup">
+    <div class="popup-content">
+      <h3>Name your playlist</h3>
+      <input type="text" id="playlistInput" placeholder="My Playlist" />
+      <div>
+        <button class="confirm" id="savePlaylistBtn">Save</button>
+        <button class="cancel" id="cancelPopupBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
   <script>
     const startup = document.getElementById('startup');
     const cardsContainer = document.getElementById('cards');
@@ -146,11 +193,16 @@
     const addFileInput = document.getElementById('addFileInput');
     const audioPlayer = document.getElementById('audioPlayer');
     const nowPlaying = document.getElementById('nowPlaying');
+    const popup = document.getElementById('popup');
+    const playlistInput = document.getElementById('playlistInput');
+    const savePlaylistBtn = document.getElementById('savePlaylistBtn');
+    const cancelPopupBtn = document.getElementById('cancelPopupBtn');
 
     let playlists = [];
     let currentPlaylistIndex = null;
     let currentTrackIndex = 0;
     let shuffledOrder = [];
+    let pendingFiles = [];
 
     const LS_KEY = 'playify_meta';
 
@@ -183,17 +235,30 @@
     }
 
     newFileInput.addEventListener('change', () => {
-      const selection = Array.from(newFileInput.files);
-      if (selection.length === 0) return;
-      const unique = addUniqueFiles([], selection);
-      const name = `Playlist ${playlists.length + 1}`;
+      pendingFiles = Array.from(newFileInput.files);
+      if (pendingFiles.length === 0) return;
+      popup.classList.remove('hidden');
+      playlistInput.value = '';
+    });
+
+    savePlaylistBtn.addEventListener('click', () => {
+      const name = playlistInput.value.trim() || `Playlist ${playlists.length + 1}`;
+      const unique = addUniqueFiles([], pendingFiles);
       playlists.push({ name, files: unique, loop: false, shuffle: false });
       renderPlaylists();
       startup.classList.add('hidden');
       audioPlayer.style.display = 'block';
       nowPlaying.style.display = 'block';
       newFileInput.value = '';
+      popup.classList.add('hidden');
+      pendingFiles = [];
       saveMeta();
+    });
+
+    cancelPopupBtn.addEventListener('click', () => {
+      popup.classList.add('hidden');
+      pendingFiles = [];
+      newFileInput.value = '';
     });
 
     function renderPlaylists() {
@@ -211,7 +276,7 @@
 
         const toggle = document.createElement('button');
         toggle.className = 'pill-btn btn-secondary';
-        toggle.textContent = 'Show';
+        toggle.textContent = 'Hide';
         toggle.onclick = () => {
           list.style.display = list.style.display === 'none' ? 'block' : 'none';
           toggle.textContent = list.style.display === 'none' ? 'Show' : 'Hide';
@@ -222,7 +287,7 @@
 
         const list = document.createElement('div');
         list.className = 'file-list';
-        updateFileList(list, p.files);
+        updateFileList(list, p.files, index);
 
         const controls = document.createElement('div');
         controls.className = 'card-controls';
@@ -279,6 +344,7 @@
         controls.append(playBtn, backBtn, skipBtn, loopBtn, shuffleBtn, renameBtn, addBtn, delBtn);
         card.append(header, list, controls);
         cardsContainer.appendChild(card);
+        list.style.display = 'block';
       });
     }
 
@@ -290,16 +356,46 @@
       return btn;
     }
 
-    function updateFileList(container, files) {
+    function updateFileList(container, files, playlistIndex) {
       container.innerHTML = '';
       files.forEach((f, i) => {
         const item = document.createElement('div');
         item.className = 'file-item';
         item.textContent = `${i + 1}. ${f.name}`;
+        item.draggable = true;
+        item.dataset.index = i;
+
         item.onclick = () => {
+          currentPlaylistIndex = playlistIndex;
           currentTrackIndex = i;
           playTrack();
         };
+
+        item.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', i);
+        });
+
+        item.addEventListener('dragover', e => {
+          e.preventDefault();
+          item.style.background = '#222';
+          item.style.color = '#fff';
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.style.background = '';
+          item.style.color = '';
+        });
+
+        item.addEventListener('drop', e => {
+          e.preventDefault();
+          const from = parseInt(e.dataTransfer.getData('text/plain'));
+          const to = parseInt(item.dataset.index);
+          const list = playlists[playlistIndex].files;
+          const moved = list.splice(from, 1)[0];
+          list.splice(to, 0, moved);
+          renderPlaylists();
+        });
+
         container.appendChild(item);
       });
     }
@@ -312,15 +408,6 @@
       const unique = addUniqueFiles(p.files, selection);
       p.files.push(...unique);
       renderPlaylists();
-      const card = cardsContainer.children[currentPlaylistIndex];
-      if (card) {
-        const toggle = card.querySelector('.pill-btn.btn-secondary');
-        const list = card.querySelector('.file-list');
-        if (list && toggle) {
-          list.style.display = 'block';
-          toggle.textContent = 'Hide';
-        }
-      }
       addFileInput.value = '';
       saveMeta();
     });
@@ -356,31 +443,4 @@
       audioPlayer.play();
       nowPlaying.textContent = `Now Playing: ${file.name}`;
 
-      audioPlayer.onended = () => {
-        currentTrackIndex++;
-        playTrack();
-      };
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const meta = loadMeta();
-      if (meta.length > 0) {
-        playlists = meta.map((m, i) => ({
-          name: m.name || `Playlist ${i + 1}`,
-          files: [],
-          loop: !!m.loop,
-          shuffle: !!m.shuffle
-        }));
-        renderPlaylists();
-        startup.classList.remove('hidden');
-        audioPlayer.style.display = 'none';
-        nowPlaying.style.display = 'none';
-      } else {
-        startup.classList.remove('hidden');
-        audioPlayer.style.display = 'none';
-        nowPlaying.style.display = 'none';
-      }
-    });
-  </script>
-</body>
-</html>
+      audioPlayer.onended =

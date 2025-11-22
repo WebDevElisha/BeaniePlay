@@ -3,284 +3,500 @@
 <head>
   <meta charset="UTF-8">
   <title>Beanie Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    /* ===== Base theme ===== */
+    :root {
+      --bg: #0f0f10;      /* black */
+      --card: #ffffff;    /* white */
+      --red: #d60000;     /* red accent */
+      --red-d: #a00000;
+      --text: #111111;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #111;
-      color: white;
-      text-align: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: #fff;
+      overflow: hidden;
     }
 
+    /* ===== Header with SVG beanie icon ===== */
     header {
-      background-color: #d60000;
-      padding: 20px;
-      font-size: 2em;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .beanie-icon {
-      width: 30px;
-      height: 30px;
-    }
-
-    .button-bar {
-      margin: 30px 0;
-    }
-
-    .pill-btn {
-      padding: 15px 40px;
-      font-size: 1.2em;
-      font-weight: bold;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      margin: 10px;
-      transition: background 0.3s ease;
-    }
-
-    .new-btn {
-      background-color: #d60000;
-      color: white;
-    }
-
-    .new-btn:hover {
-      background-color: #a00000;
-    }
-
-    .add-btn {
-      background-color: white;
-      color: #d60000;
-    }
-
-    .add-btn:hover {
-      background-color: #f0f0f0;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .playlist-card {
-      background-color: #fff;
-      color: #111;
-      border: 2px solid #d60000;
-      border-radius: 10px;
-      margin: 20px auto;
-      max-width: 600px;
-      padding: 20px;
-      text-align: left;
-    }
-
-    .playlist-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 1.2em;
-      color: #d60000;
-    }
-
-    .playlist-files {
-      display: none;
-      margin-top: 10px;
-    }
-
-    .playlist-files li {
-      margin: 5px 0;
-    }
-
-    .playlist-controls {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .playlist-controls button {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .play-btn {
-      background-color: #d60000;
-      color: white;
-    }
-
-    .play-btn:hover {
-      background-color: #a00000;
-    }
-
-    .add-files-btn {
-      background-color: white;
-      color: #d60000;
-    }
-
-    .add-files-btn:hover {
-      background-color: #f0f0f0;
-    }
-
-    .popup {
-      display: none;
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      background: var(--red);
+      display: flex;
       align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+      z-index: 1000;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    .beanie-icon {
+      width: 28px;
+      height: 28px;
     }
 
-    .popup-content {
-      background: #fff;
-      color: #333;
-      padding: 20px;
-      border-radius: 10px;
+    /* ===== Startup screen ===== */
+    .startup {
+      position: fixed;
+      inset: 64px 0 0 0; /* below header */
+      display: grid;
+      place-items: center;
       text-align: center;
-      width: 300px;
+      padding: 24px;
+    }
+    .startup-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    .title-big {
+      font-size: 42px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(214,0,0,0.6);
+    }
+    .subtitle {
+      color: #cfcfcf;
+      max-width: 560px;
+      line-height: 1.4;
+      font-size: 16px;
     }
 
-    .popup-content input {
-      width: 90%;
-      padding: 10px;
-      margin-top: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+    /* ===== Global controls bar ===== */
+    .controls {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 900;
     }
-
-    .popup-content button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #d60000;
-      color: white;
+    .pill-btn {
+      padding: 12px 22px;
+      border-radius: 999px;
       border: none;
-      border-radius: 5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.06s ease, background 0.2s ease;
+    }
+    .pill-btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--red); color: #fff; }
+    .btn-primary:hover { background: var(--red-d); }
+    .btn-secondary { background: #fff; color: var(--red); border: 2px solid var(--red); }
+    .btn-secondary:hover { background: #f6f6f6; }
+
+    /* Hidden file inputs */
+    input[type="file"] { display: none; }
+
+    /* ===== Canvas for draggable playlist cards ===== */
+    .canvas {
+      position: fixed;
+      inset: 64px 0 72px 0; /* header + bottom controls */
+      overflow: auto; /* in case cards go beyond */
+      padding: 24px;
+    }
+    .canvas-inner {
+      position: relative;
+      min-height: calc(100% - 48px);
+    }
+
+    /* ===== Beanie-shaped playlist card ===== */
+    .playlist-card {
+      position: absolute; /* draggable */
+      width: 520px;         /* target size like your screenshot */
+      max-width: calc(100% - 48px);
+      min-height: 170px;
+      color: var(--text);
+      background: var(--card);
+      border: 3px solid var(--red);
+      border-radius: 0 0 16px 16px; /* flat-ish bottom */
+      box-shadow: 0 12px 26px rgba(0,0,0,0.35);
+      user-select: none;
+      transition: box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    .playlist-card:active { transform: scale(0.997); }
+
+    /* Beanie top using clip-path ellipse cap */
+    .playlist-card::before {
+      content: "";
+      position: absolute;
+      top: -48px; left: -3px; right: -3px;
+      height: 96px;
+      background: var(--card);
+      border: 3px solid var(--red);
+      border-bottom: none;
+      border-top-left-radius: 50% 100%;
+      border-top-right-radius: 50% 100%;
+      clip-path: ellipse(50% 80% at 50% 100%);
+      z-index: 0;
+    }
+
+    /* Header area (drag handle + dropdown toggle) */
+    .card-header {
+      position: relative;
+      z-index: 1;
+      padding: 16px 18px 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: grab; /* drag handle */
+    }
+    .card-header:active { cursor: grabbing; }
+    .card-title {
+      font-weight: 900;
+      font-size: 18px;
+      color: var(--red);
+      letter-spacing: 0.2px;
+    }
+    .dropdown-toggle {
+      font-weight: 800;
+      color: var(--red);
+      background: #fff;
+      border: 2px solid var(--red);
+      border-radius: 999px;
+      padding: 6px 14px;
       cursor: pointer;
     }
+    .dropdown-toggle:hover { background: #f6f6f6; }
 
-    audio {
-      margin: 30px auto;
-      display: block;
-      width: 90%;
+    /* File list (hidden until dropdown) */
+    .file-list {
+      display: none;
+      position: relative;
+      z-index: 1;
+      padding: 8px 18px 12px 18px;
+      border-top: 1px dashed #e6e6e6;
     }
+    .file-item {
+      padding: 6px 0;
+      font-size: 14px;
+      color: #222;
+    }
+
+    /* Controls inside card */
+    .card-controls {
+      position: relative;
+      z-index: 1;
+      padding: 10px 18px 18px 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-play { background: var(--red); color: #fff; border: none; }
+    .btn-play:hover { background: var(--red-d); }
+    .btn-add { background: #fff; color: var(--red); border: 2px solid var(--red); }
+    .btn-add:hover { background: #f6f6f6; }
+    .btn-delete { background: #1b1b1c; color: #fff; border: 2px solid #2e2e30; }
+    .btn-delete:hover { background: #2a2a2c; }
+
+    /* Global audio player (only visible once a playlist exists) */
+    audio {
+      position: fixed;
+      left: 16px; right: 16px;
+      bottom: 72px;
+      width: calc(100% - 32px);
+      display: none; /* initially hidden */
+      filter: drop-shadow(0 6px 20px rgba(0,0,0,0.45));
+    }
+
+    /* "Now Playing" label */
+    .now-playing {
+      position: fixed;
+      bottom: 120px;
+      left: 16px; right: 16px;
+      text-align: center;
+      color: #fff;
+      font-weight: 700;
+      display: none;
+      text-shadow: 0 2px 10px rgba(214,0,0,0.4);
+    }
+
+    /* Helper: hidden */
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
+  <!-- Header with inline SVG icon (vector icon, not an image file) -->
   <header>
-    <!-- Inline SVG beanie icon (vector, not an image file) -->
-    <svg class="beanie-icon" viewBox="0 0 64 64" fill="white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <!-- Simple beanie silhouette: top cap + brim -->
-      <path d="M32 6c-12 0-22 10-22 22v4h44v-4C54 16 44 6 32 6z"/>
-      <path d="M10 32v16c0 6 4 10 10 10h24c6 0 10-4 10-10V32H10z"/>
+    <svg class="beanie-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Simple beanie silhouette -->
+      <path d="M32 6c-12 0-22 10-22 22v4h44v-4C54 16 44 6 32 6z" fill="#fff"/>
+      <path d="M10 32v16c0 6 4 10 10 10h24c6 0 10-4 10-10V32H10z" fill="#fff"/>
     </svg>
     Beanie Play
   </header>
 
-  <div class="button-bar">
-    <label class="pill-btn new-btn" for="newFileInput">New Playlist</label>
+  <!-- Startup screen (centered) -->
+  <section class="startup" id="startup">
+    <div class="startup-inner">
+      <div class="title-big">Beanie Play</div>
+      <div class="subtitle">Create your first playlist to get started. Clean red-white cards on a black canvas, all draggable and easy to manage.</div>
+      <label class="pill-btn btn-primary" for="newFileInput">Create playlist</label>
+    </div>
+  </section>
+
+  <!-- Canvas for draggable playlist cards -->
+  <main class="canvas">
+    <div class="canvas-inner" id="canvasInner"></div>
+  </main>
+
+  <!-- Global controls -->
+  <div class="controls">
+    <label class="pill-btn btn-primary" for="newFileInput">New playlist</label>
     <input type="file" id="newFileInput" multiple accept="audio/*">
-    <!-- Hidden input triggered by per-playlist "Add Files" buttons -->
+    <!-- Per-card add files will programmatically click this -->
     <input type="file" id="addFileInput" multiple accept="audio/*">
   </div>
 
-  <div id="playlists"></div>
-
+  <!-- Global audio player + now playing -->
+  <p class="now-playing" id="nowPlaying"></p>
   <audio id="audioPlayer" controls></audio>
 
-  <!-- Name playlist popup -->
-  <div class="popup" id="popup">
-    <div class="popup-content">
-      <h3>Name your playlist</h3>
-      <input type="text" id="playlistInput" placeholder="Untitled Playlist">
-      <button onclick="savePlaylist()">Save</button>
+  <!-- Popup for naming playlist -->
+  <div class="popup hidden" id="popup" style="
+    position: fixed; inset: 0; display: grid; place-items: center;
+    background: rgba(0,0,0,0.6); z-index: 1100;">
+    <div style="background:#fff;color:#333;padding:18px 18px 14px;border-radius:12px;width:320px;text-align:center;">
+      <h3 style="margin:0 0 10px;color:#111;">Name your playlist</h3>
+      <input type="text" id="playlistInput" placeholder="Untitled Playlist"
+             style="width:90%;padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;">
+        <button id="savePlaylistBtn" class="pill-btn btn-primary">Save</button>
+        <button id="cancelPopupBtn" class="pill-btn btn-secondary">Cancel</button>
+      </div>
     </div>
   </div>
-
   <script>
+    /* ===== State ===== */
+    const audioPlayer = document.getElementById('audioPlayer');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const startup = document.getElementById('startup');
+    const canvasInner = document.getElementById('canvasInner');
+
     const newFileInput = document.getElementById('newFileInput');
     const addFileInput = document.getElementById('addFileInput');
-    const playlistsContainer = document.getElementById('playlists');
     const popup = document.getElementById('popup');
     const playlistInput = document.getElementById('playlistInput');
-    const audioPlayer = document.getElementById('audioPlayer');
+    const savePlaylistBtn = document.getElementById('savePlaylistBtn');
+    const cancelPopupBtn = document.getElementById('cancelPopupBtn');
 
-    let currentFiles = [];
-    let playlists = [];
-    let currentPlaylistIndex = null;
+    let currentFilesBuffer = [];      // files selected for new playlist
+    let playlists = [];               // { id, name, files: File[], x, y }
+    let currentPlaylistIndex = null;  // for playing / adding
     let currentTrackIndex = 0;
 
-    // Create new playlist flow
-    newFileInput.addEventListener('change', () => {
-      currentFiles = Array.from(newFileInput.files);
-      popup.style.display = 'flex';
-    });
+    /* ===== LocalStorage (names + positions only; files cannot persist across refresh) ===== */
+    const LS_KEY = 'beanie_playlists_meta';
 
-    function savePlaylist() {
-      const name = playlistInput.value.trim() || `Untitled Playlist ${playlists.length + 1}`;
-      playlists.push({ name, files: currentFiles });
-      renderPlaylists();
-      popup.style.display = 'none';
-      playlistInput.value = '';
-      // reset input so selecting the same files again still fires change
-      newFileInput.value = '';
+    function saveMeta() {
+      const meta = playlists.map(p => ({
+        id: p.id, name: p.name, x: p.x, y: p.y, count: p.files.length
+      }));
+      localStorage.setItem(LS_KEY, JSON.stringify(meta));
+    }
+    function loadMeta() {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch { return []; }
     }
 
-    // Render all playlists as boxes
-    function renderPlaylists() {
-      playlistsContainer.innerHTML = '';
-      playlists.forEach((playlist, index) => {
-        const card = document.createElement('div');
-        card.className = 'playlist-card';
+    /* ===== Helpers ===== */
+    function uid() { return Math.random().toString(36).slice(2, 9); }
+    function showAudioUI(show) {
+      audioPlayer.style.display = show ? 'block' : 'none';
+      nowPlaying.style.display = show ? 'block' : 'none';
+    }
+    function hideStartup() { startup.classList.add('hidden'); }
+    function showStartup() { startup.classList.remove('hidden'); }
 
-        const header = document.createElement('div');
-        header.className = 'playlist-header';
-        header.textContent = playlist.name;
-        header.onclick = () => {
-          const ul = card.querySelector('ul');
-          ul.style.display = ul.style.display === 'none' ? 'block' : 'none';
-        };
+    /* ===== Create new playlist flow ===== */
+    newFileInput.addEventListener('change', () => {
+      currentFilesBuffer = Array.from(newFileInput.files);
+      popup.classList.remove('hidden');
+      playlistInput.value = '';
+    });
 
-        const ul = document.createElement('ul');
-        ul.className = 'playlist-files';
-        ul.style.display = 'none';
-        playlist.files.forEach((file, i) => {
-          const li = document.createElement('li');
-          li.textContent = `${i + 1}. ${file.name}`;
-          ul.appendChild(li);
-        });
+    savePlaylistBtn.addEventListener('click', () => {
+      const name = (playlistInput.value || '').trim() || `Untitled Playlist ${playlists.length + 1}`;
+      const id = uid();
+      const x = 24 + (playlists.length % 3) * 36;  // stagger spawn
+      const y = 24 + (playlists.length % 3) * 24;
 
-        const controls = document.createElement('div');
-        controls.className = 'playlist-controls';
+      const playlist = { id, name, files: currentFilesBuffer, x, y };
+      playlists.push(playlist);
+      renderCard(playlist, playlists.length - 1);
+      popup.classList.add('hidden');
+      currentFilesBuffer = [];
+      newFileInput.value = '';
+      hideStartup();
+      showAudioUI(true);
+      saveMeta();
+    });
 
-        const playBtn = document.createElement('button');
-        playBtn.className = 'play-btn';
-        playBtn.textContent = 'Play';
-        playBtn.onclick = () => playPlaylist(index);
+    cancelPopupBtn.addEventListener('click', () => {
+      popup.classList.add('hidden');
+      currentFilesBuffer = [];
+      newFileInput.value = '';
+    });
 
-        const addBtn = document.createElement('button');
-        addBtn.className = 'add-files-btn';
-        addBtn.textContent = 'Add Files';
-        addBtn.onclick = () => {
-          currentPlaylistIndex = index;
-          addFileInput.click();
-        };
+    /* ===== Render a single playlist card ===== */
+    function renderCard(playlist, index) {
+      // Create card
+      const card = document.createElement('div');
+      card.className = 'playlist-card';
+      card.style.left = `${playlist.x ?? 24}px`;
+      card.style.top = `${playlist.y ?? 24}px`;
+      card.dataset.id = playlist.id;
 
-        controls.appendChild(playBtn);
-        controls.appendChild(addBtn);
+      // Header (drag handle + dropdown)
+      const header = document.createElement('div');
+      header.className = 'card-header';
 
-        card.appendChild(header);
-        card.appendChild(ul);
-        card.appendChild(controls);
-        playlistsContainer.appendChild(card);
+      const title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = playlist.name;
+
+      const dropBtn = document.createElement('button');
+      dropBtn.className = 'dropdown-toggle';
+      dropBtn.textContent = 'Show';
+      dropBtn.addEventListener('click', () => {
+        const list = card.querySelector('.file-list');
+        const isHidden = list.style.display === 'none' || list.style.display === '';
+        list.style.display = isHidden ? 'block' : 'none';
+        dropBtn.textContent = isHidden ? 'Hide' : 'Show';
+        autoResizeCard(card);
+      });
+
+      header.appendChild(title);
+      header.appendChild(dropBtn);
+
+      // File list
+      const list = document.createElement('div');
+      list.className = 'file-list';
+      list.style.display = 'none';
+
+      const items = document.createElement('div');
+      playlist.files.forEach((file, i) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.textContent = `${i + 1}. ${file.name}`;
+        items.appendChild(item);
+      });
+      list.appendChild(items);
+
+      // Controls
+      const controls = document.createElement('div');
+      controls.className = 'card-controls';
+
+      const playBtn = document.createElement('button');
+      playBtn.className = 'pill-btn btn-play';
+      playBtn.textContent = 'Play';
+      playBtn.addEventListener('click', () => playPlaylist(index));
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'pill-btn btn-add';
+      addBtn.textContent = 'Add Files';
+      addBtn.addEventListener('click', () => {
+        currentPlaylistIndex = index;
+        addFileInput.click();
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'pill-btn btn-delete';
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', () => {
+        // Remove from DOM and state
+        card.remove();
+        playlists.splice(index, 1);
+        reRenderAll();
+        // If no playlists left, show startup and hide audio UI
+        if (playlists.length === 0) {
+          showStartup();
+          showAudioUI(false);
+        }
+        saveMeta();
+      });
+
+      controls.appendChild(playBtn);
+      controls.appendChild(addBtn);
+      controls.appendChild(delBtn);
+
+      // Assemble
+      card.appendChild(header);
+      card.appendChild(list);
+      card.appendChild(controls);
+      canvasInner.appendChild(card);
+
+      // Enable dragging
+      enableDrag(card, index);
+      // Size appropriately
+      autoResizeCard(card);
+    }
+
+    /* ===== Auto resize card to its contents ===== */
+    function autoResizeCard(card) {
+      const base = 170; // min height
+      const list = card.querySelector('.file-list');
+      const controls = card.querySelector('.card-controls');
+      const padding = 24;
+      const listHeight = (list.style.display === 'none') ? 0 : Math.max(list.scrollHeight, 0);
+      const total = base + listHeight + controls.scrollHeight + padding;
+      card.style.height = `${total}px`;
+    }
+
+    /* ===== Dragging ===== */
+    function enableDrag(card, index) {
+      const header = card.querySelector('.card-header');
+      let offsetX = 0, offsetY = 0, dragging = false;
+
+      header.addEventListener('mousedown', (e) => {
+        dragging = true;
+        const rect = card.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        document.body.style.cursor = 'grabbing';
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        card.style.left = `${x}px`;
+        card.style.top = `${y}px`;
+      });
+      window.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        document.body.style.cursor = '';
+        // Save position
+        const rect = card.getBoundingClientRect();
+        const canvasRect = canvasInner.getBoundingClientRect();
+        const x = rect.left - canvasRect.left;
+        const y = rect.top - canvasRect.top;
+        const id = card.dataset.id;
+        const pIndex = playlists.findIndex(p => p.id === id);
+        if (pIndex > -1) {
+          playlists[pIndex].x = x;
+          playlists[pIndex].y = y;
+          saveMeta();
+        }
       });
     }
 
-    // Sequential playback
+    /* ===== Sequential playback ===== */
     function playPlaylist(index) {
       currentPlaylistIndex = index;
       currentTrackIndex = 0;
@@ -289,12 +505,15 @@
 
     function playTrack() {
       const playlist = playlists[currentPlaylistIndex];
-      if (!playlist || currentTrackIndex >= playlist.files.length) return;
-
+      if (!playlist || currentTrackIndex >= playlist.files.length) {
+        nowPlaying.textContent = '';
+        return;
+      }
       const file = playlist.files[currentTrackIndex];
       const url = URL.createObjectURL(file);
       audioPlayer.src = url;
       audioPlayer.play();
+      nowPlaying.textContent = `Now Playing: ${file.name}`;
 
       audioPlayer.onended = () => {
         currentTrackIndex++;
@@ -302,27 +521,59 @@
       };
     }
 
-    // Add files to an existing playlist
+    /* ===== Add files to existing playlist ===== */
     addFileInput.addEventListener('change', () => {
-      if (currentPlaylistIndex !== null) {
-        const newFiles = Array.from(addFileInput.files);
-        playlists[currentPlaylistIndex].files.push(...newFiles);
-        renderPlaylists();
-        // auto-expand the updated playlist
-        const cards = playlistsContainer.querySelectorAll('.playlist-card');
-        const updatedCard = cards[currentPlaylistIndex];
-        const ul = updatedCard.querySelector('ul');
-        ul.style.display = 'block';
-        currentPlaylistIndex = null;
-        // reset input to allow re-adding same selection
-        addFileInput.value = '';
+      if (currentPlaylistIndex === null) return;
+      const newFiles = Array.from(addFileInput.files);
+      if (newFiles.length === 0) return;
+
+      const p = playlists[currentPlaylistIndex];
+      p.files.push(...newFiles);
+
+      // Update the corresponding card
+      reRenderAll();
+
+      // Auto-expand the updated playlist
+      const card = [...canvasInner.querySelectorAll('.playlist-card')][currentPlaylistIndex];
+      if (card) {
+        const list = card.querySelector('.file-list');
+        const toggle = card.querySelector('.dropdown-toggle');
+        list.style.display = 'block';
+        if (toggle) toggle.textContent = 'Hide';
+        autoResizeCard(card);
+      }
+
+      addFileInput.value = '';
+      saveMeta();
+    });
+
+    /* ===== Re-render all cards (after delete / add) ===== */
+    function reRenderAll() {
+      canvasInner.innerHTML = '';
+      playlists.forEach((p, i) => renderCard(p, i));
+    }
+
+    /* ===== Load stored meta on start (names + positions) ===== */
+    window.addEventListener('DOMContentLoaded', () => {
+      const meta = loadMeta();
+      if (meta.length > 0) {
+        // Recreate playlists with empty files (cannot persist File blobs)
+        playlists = meta.map(m => ({ id: m.id, name: m.name, files: [], x: m.x ?? 24, y: m.y ?? 24 }));
+        reRenderAll();
+        hideStartup();           // We have saved playlists
+        showAudioUI(true);       // Show player for UX consistency
+      } else {
+        showStartup();           // No playlists yet
+        showAudioUI(false);      // Hide player
       }
     });
 
-    // Close popup when clicking outside
-    window.addEventListener('click', (e) => {
+    /* ===== Close popup on backdrop click ===== */
+    popup.addEventListener('click', (e) => {
       if (e.target === popup) {
-        popup.style.display = 'none';
+        popup.classList.add('hidden');
+        currentFilesBuffer = [];
+        newFileInput.value = '';
       }
     });
   </script>

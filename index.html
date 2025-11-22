@@ -20,12 +20,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 10px;
     }
 
-    header::before {
-      content: '🧢';
-      font-size: 1.2em;
-      margin-right: 10px;
+    .beanie-icon {
+      width: 30px;
+      height: 30px;
     }
 
     .button-bar {
@@ -66,7 +66,8 @@
     }
 
     .playlist-card {
-      background-color: #222;
+      background-color: #fff;
+      color: #111;
       border: 2px solid #d60000;
       border-radius: 10px;
       margin: 20px auto;
@@ -170,11 +171,20 @@
   </style>
 </head>
 <body>
-  <header>Beanie Play</header>
+  <header>
+    <!-- Inline SVG beanie icon (vector, not an image file) -->
+    <svg class="beanie-icon" viewBox="0 0 64 64" fill="white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Simple beanie silhouette: top cap + brim -->
+      <path d="M32 6c-12 0-22 10-22 22v4h44v-4C54 16 44 6 32 6z"/>
+      <path d="M10 32v16c0 6 4 10 10 10h24c6 0 10-4 10-10V32H10z"/>
+    </svg>
+    Beanie Play
+  </header>
 
   <div class="button-bar">
     <label class="pill-btn new-btn" for="newFileInput">New Playlist</label>
     <input type="file" id="newFileInput" multiple accept="audio/*">
+    <!-- Hidden input triggered by per-playlist "Add Files" buttons -->
     <input type="file" id="addFileInput" multiple accept="audio/*">
   </div>
 
@@ -182,6 +192,7 @@
 
   <audio id="audioPlayer" controls></audio>
 
+  <!-- Name playlist popup -->
   <div class="popup" id="popup">
     <div class="popup-content">
       <h3>Name your playlist</h3>
@@ -203,6 +214,7 @@
     let currentPlaylistIndex = null;
     let currentTrackIndex = 0;
 
+    // Create new playlist flow
     newFileInput.addEventListener('change', () => {
       currentFiles = Array.from(newFileInput.files);
       popup.style.display = 'flex';
@@ -214,8 +226,11 @@
       renderPlaylists();
       popup.style.display = 'none';
       playlistInput.value = '';
+      // reset input so selecting the same files again still fires change
+      newFileInput.value = '';
     }
 
+    // Render all playlists as boxes
     function renderPlaylists() {
       playlistsContainer.innerHTML = '';
       playlists.forEach((playlist, index) => {
@@ -232,6 +247,7 @@
 
         const ul = document.createElement('ul');
         ul.className = 'playlist-files';
+        ul.style.display = 'none';
         playlist.files.forEach((file, i) => {
           const li = document.createElement('li');
           li.textContent = `${i + 1}. ${file.name}`;
@@ -264,6 +280,7 @@
       });
     }
 
+    // Sequential playback
     function playPlaylist(index) {
       currentPlaylistIndex = index;
       currentTrackIndex = 0;
@@ -285,14 +302,24 @@
       };
     }
 
+    // Add files to an existing playlist
     addFileInput.addEventListener('change', () => {
       if (currentPlaylistIndex !== null) {
-        playlists[currentPlaylistIndex].files.push(...Array.from(addFileInput.files));
+        const newFiles = Array.from(addFileInput.files);
+        playlists[currentPlaylistIndex].files.push(...newFiles);
         renderPlaylists();
+        // auto-expand the updated playlist
+        const cards = playlistsContainer.querySelectorAll('.playlist-card');
+        const updatedCard = cards[currentPlaylistIndex];
+        const ul = updatedCard.querySelector('ul');
+        ul.style.display = 'block';
         currentPlaylistIndex = null;
+        // reset input to allow re-adding same selection
+        addFileInput.value = '';
       }
     });
 
+    // Close popup when clicking outside
     window.addEventListener('click', (e) => {
       if (e.target === popup) {
         popup.style.display = 'none';

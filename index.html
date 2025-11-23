@@ -20,8 +20,6 @@
       background: var(--bg);
       color: #fff;
     }
-
-    /* Header */
     header {
       height: 64px;
       background: var(--red);
@@ -35,7 +33,6 @@
     }
     .music-icon { width: 28px; height: 28px; }
 
-    /* Startup */
     .startup {
       display: grid;
       place-items: center;
@@ -46,7 +43,6 @@
     .title-big { font-size: 42px; font-weight: 900; }
     .subtitle { color: #cfcfcf; margin: 8px 0 18px; }
 
-    /* Choice buttons */
     .choice-row {
       display: flex;
       gap: 12px;
@@ -66,7 +62,6 @@
     .btn-secondary { background: #fff; color: var(--red); border: 2px solid var(--red); }
     .btn-secondary:hover { background: #f6f6f6; }
 
-    /* Canvas and cards */
     main.canvas { padding: 24px; max-width: 1200px; margin: 0 auto; }
     .cards {
       display: grid;
@@ -74,7 +69,6 @@
       gap: 18px;
     }
 
-    /* Playlist card — grows when single playlist exists */
     .playlist-card {
       background: var(--card);
       color: var(--text);
@@ -89,12 +83,9 @@
       min-height: calc(100vh - 64px - 80px);
       width: 100%;
     }
-
-    /* Draggable card */
     .playlist-card[draggable="true"] { cursor: grab; }
     .playlist-card.dragging { opacity: 0.85; cursor: grabbing; }
 
-    /* Card header */
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -103,7 +94,6 @@
     .card-title { font-weight: 900; color: var(--red); font-size: 20px; }
     .toggle-btn { margin-left: 8px; }
 
-    /* File list */
     .file-list {
       display: none;
       margin-top: 10px;
@@ -126,7 +116,6 @@
     .row-left { display: inline-flex; align-items: center; gap: 8px; }
     .drag-handle { color: var(--muted); font-size: 14px; cursor: move; user-select: none; }
 
-    /* Toolbar controls — cleaner circular icon buttons */
     .card-controls {
       margin-top: 12px;
       display: flex;
@@ -160,7 +149,6 @@
     }
     .icon-btn:hover { filter: brightness(0.95); }
 
-    /* Player */
     .player-wrap {
       max-width: 1000px;
       margin: 10px auto 30px;
@@ -171,7 +159,6 @@
 
     .hidden { display: none !important; }
 
-    /* Popup for naming new playlist / adding YouTube link */
     .popup {
       position: fixed;
       inset: 0;
@@ -203,7 +190,6 @@
       justify-content: center;
     }
 
-    /* Minimal YouTube container (audio-only intent) */
     .yt-audio {
       width: 0;
       height: 0;
@@ -223,7 +209,6 @@
     Playify
   </header>
 
-  <!-- Startup with choice: YouTube link or local files -->
   <section class="startup" id="startup">
     <div>
       <div class="title-big">Playify</div>
@@ -239,7 +224,6 @@
     <div class="cards" id="cards"></div>
   </main>
 
-  <!-- Hidden inputs — only triggered by buttons -->
   <input type="file" id="newFileInput" multiple accept="audio/*" class="hidden" />
   <input type="file" id="addFileInput" multiple accept="audio/*" class="hidden" />
 
@@ -248,7 +232,6 @@
     <audio id="audioPlayer" controls></audio>
   </div>
 
-  <!-- Popup (reused) -->
   <div class="popup hidden" id="popup">
     <div class="popup-content">
       <h3 id="popupTitle">Name your playlist</h3>
@@ -310,7 +293,7 @@
       return out;
     }
 
-    /* Create playlist (files) — no phantom/duplicate card */
+    /* Create playlist (files) */
     createPlaylistBtn.addEventListener('click', () => {
       popup.classList.remove('hidden');
       popupTitle.textContent = 'Name your playlist';
@@ -319,11 +302,9 @@
       popupConfirmBtn.onclick = () => {
         const name = popupInput.value.trim() || `Playlist ${playlists.length + 1}`;
         popup.classList.add('hidden');
-        // Then prompt for files
         const onNewFiles = () => {
           const selection = Array.from(newFileInput.files);
           const unique = addUniqueFiles([], selection);
-          // Add only if user selected files
           if (unique.length > 0) {
             playlists.push({ name, type: 'files', files: unique, loop: false, shuffle: false });
             renderPlaylists();
@@ -338,7 +319,7 @@
       };
     });
 
-    /* Create YouTube "playlist" (single URL, audio-only intent via embed) */
+    /* Create YouTube playlist */
     createYouTubeBtn.addEventListener('click', () => {
       popup.classList.remove('hidden');
       popupTitle.textContent = 'Enter a YouTube URL';
@@ -367,11 +348,10 @@
       startup.classList.add('hidden');
       audioPlayer.style.display = 'block';
       nowPlaying.style.display = 'block';
-      // Expand card if only one playlist exists
       resizeCardsForCount();
     }
 
-    /* Resize/expand cards when there is only one */
+    /* Resize/expand cards when only one playlist exists */
     function resizeCardsForCount() {
       const count = playlists.length;
       const cards = cardsContainer.querySelectorAll('.playlist-card');
@@ -381,62 +361,14 @@
       });
     }
 
-    /* Drag cards between positions */
-    function applyCardDrag() {
-      const cards = cardsContainer.querySelectorAll('.playlist-card');
-      cards.forEach((card, idx) => {
-        card.setAttribute('draggable', 'true');
-        card.addEventListener('dragstart', () => {
-          card.classList.add('dragging');
-          card.dataset.dragIndex = idx;
-        });
-        card.addEventListener('dragend', () => {
-          card.classList.remove('dragging');
-        });
-      });
-
-      cardsContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const dragging = document.querySelector('.playlist-card.dragging');
-        if (!dragging) return;
-        const dragIndex = parseInt(dragging.dataset.dragIndex, 10);
-        const afterElement = getCardAfter(cardsContainer, e.clientY);
-        let dropIndex = playlists.length - 1;
-        if (afterElement) {
-          dropIndex = Array.from(cardsContainer.children).indexOf(afterElement);
-        } else {
-          dropIndex = playlists.length - 1;
-        }
-        if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
-          const moved = playlists.splice(dragIndex, 1)[0];
-          playlists.splice(dropIndex, 0, moved);
-          renderPlaylists();
-          saveMeta();
-        }
-      });
-
-      function getCardAfter(container, y) {
-        const cardElements = [...container.querySelectorAll('.playlist-card:not(.dragging)')];
-        return cardElements.reduce((closest, child) => {
-          const box = child.getBoundingClientRect();
-          const offset = y - box.top - box.height / 2;
-          if (offset < 0 && offset > (closest.offset || Number.NEGATIVE_INFINITY)) {
-            return { offset, element: child };
-          } else {
-            return closest;
-          }
-        }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
-      }
-    }
-
-    /* Rendering */
+    /* Rendering playlists */
     function renderPlaylists() {
       cardsContainer.innerHTML = '';
       playlists.forEach((p, index) => {
         const card = document.createElement('div');
         card.className = 'playlist-card';
 
-        /* Header: title + show/hide */
+        /* Header */
         const header = document.createElement('div');
         header.className = 'card-header';
 
@@ -469,7 +401,7 @@
           list.appendChild(item);
         }
 
-        /* Controls toolbar — grouped */
+        /* Controls toolbar */
         const controls = document.createElement('div');
         controls.className = 'card-controls';
 
@@ -520,13 +452,11 @@
 
         controls.append(groupPlay, groupModes, groupActions);
 
-        /* Assemble card + initial show */
         card.append(header, list, controls);
         cardsContainer.appendChild(card);
         list.style.display = 'block';
       });
 
-      applyCardDrag();
       resizeCardsForCount();
     }
 
@@ -535,9 +465,6 @@
       btn.className = 'icon-btn' + (primary ? ' primary' : '');
       btn.textContent = label;
       btn.onclick = action;
-      return btn;
-    }
-
     /* Build file list with drag-and-drop + per-file delete */
     function updateFileList(container, files, playlistIndex) {
       container.innerHTML = '';
@@ -569,14 +496,12 @@
 
         item.append(left, deleteBtn);
 
-        /* Click-to-play */
         item.addEventListener('click', () => {
           currentPlaylistIndex = playlistIndex;
           currentTrackIndex = i;
           playTrack();
         });
 
-        /* Drag events for file reordering */
         item.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', i);
         });
@@ -597,49 +522,15 @@
           const moved = listRef.splice(from, 1)[0];
           listRef.splice(to, 0, moved);
           renderPlaylists();
-          // Re-open list after render
-          const card = cardsContainer.children[playlistIndex];
-          const fl = card?.querySelector('.file-list');
-          const tg = card?.querySelector('.toggle-btn');
-          if (fl && tg) { fl.style.display = 'block'; tg.textContent = 'Hide'; }
         });
 
         container.appendChild(item);
       });
     }
 
-    /* Utils */
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, s => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[s]));
-    }
-  </script>
-  <script>
-    /* Add files to existing playlist (deduped, no duplication bug) */
-    addFileInput.addEventListener('change', () => {
-      if (currentPlaylistIndex === null) return;
-      const selection = Array.from(addFileInput.files);
-      if (selection.length === 0) return;
+    /* Playback logic */
+    let shuffleQueue = [];
 
-      const p = playlists[currentPlaylistIndex];
-      if (p.type !== 'files') return;
-
-      const unique = addUniqueFiles(p.files, selection);
-      p.files.push(...unique);
-      renderPlaylists();
-
-      // Auto-expand updated playlist
-      const card = cardsContainer.children[currentPlaylistIndex];
-      const fl = card?.querySelector('.file-list');
-      const tg = card?.querySelector('.toggle-btn');
-      if (fl && tg) { fl.style.display = 'block'; tg.textContent = 'Hide'; }
-
-      addFileInput.value = '';
-      saveMeta();
-    });
-
-    /* Playback controls */
     function playPlaylist(index) {
       currentPlaylistIndex = index;
       const p = playlists[index];
@@ -649,7 +540,17 @@
         return;
       }
       currentTrackIndex = 0;
+      shuffleQueue = p.shuffle ? generateShuffleQueue(p.files.length) : [];
       playTrack();
+    }
+
+    function generateShuffleQueue(length) {
+      const indices = [...Array(length).keys()];
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return indices;
     }
 
     function stepPrev() {
@@ -662,11 +563,7 @@
     function stepNext() {
       const p = playlists[currentPlaylistIndex];
       if (!p || p.type !== 'files') return;
-      if (p.shuffle) {
-        currentTrackIndex = Math.floor(Math.random() * p.files.length);
-      } else {
-        currentTrackIndex++;
-      }
+      currentTrackIndex++;
       playTrack();
     }
 
@@ -688,40 +585,52 @@
         return;
       }
 
-      if (currentTrackIndex >= files.length) {
-        if (p.loop) {
-          currentTrackIndex = 0;
-        } else {
-          nowPlaying.textContent = '';
-          audioPlayer.pause();
-          return;
+      let indexToPlay;
+      if (p.shuffle) {
+        if (currentTrackIndex >= shuffleQueue.length) {
+          if (p.loop) {
+            shuffleQueue = generateShuffleQueue(files.length);
+            currentTrackIndex = 0;
+          } else {
+            nowPlaying.textContent = '';
+            audioPlayer.pause();
+            return;
+          }
         }
+        indexToPlay = shuffleQueue[currentTrackIndex];
+      } else {
+        if (currentTrackIndex >= files.length) {
+          if (p.loop) {
+            currentTrackIndex = 0;
+          } else {
+            nowPlaying.textContent = '';
+            audioPlayer.pause();
+            return;
+          }
+        }
+        indexToPlay = currentTrackIndex;
       }
 
-      const file = files[currentTrackIndex];
+      const file = files[indexToPlay];
       const url = URL.createObjectURL(file);
       audioPlayer.src = url;
       audioPlayer.play();
       nowPlaying.textContent = `Now Playing: ${file.name}`;
 
       audioPlayer.onended = () => {
-        // Shuffle fix: pick random track each time, else sequential
-        if (p.shuffle) {
-          currentTrackIndex = Math.floor(Math.random() * files.length);
-        } else {
-          currentTrackIndex++;
-        }
+        currentTrackIndex++;
         playTrack();
       };
     }
 
-    /* YouTube "audio-only" embed (no API key). It uses iframe playback.
-       Note: Autoplay may require a user gesture. */
+    /* YouTube embed (audio-only intent) */
     let ytContainer = null;
     function playYouTube(url) {
       const id = extractYouTubeId(url);
-      if (!id) return;
-
+      if (!id) {
+        nowPlaying.textContent = 'Invalid YouTube link';
+        return;
+      }
       if (!ytContainer) {
         ytContainer = document.createElement('div');
         ytContainer.className = 'yt-audio';
@@ -748,7 +657,7 @@
       } catch { return null; }
     }
 
-    /* Load metadata (names, loop/shuffle/type) on start */
+    /* Lifecycle */
     window.addEventListener('DOMContentLoaded', () => {
       const meta = loadMeta();
       if (meta.length > 0) {
@@ -772,10 +681,15 @@
       }
     });
 
-    /* Close popup when clicking backdrop */
     popup.addEventListener('click', (e) => {
       if (e.target === popup) popup.classList.add('hidden');
     });
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[s]));
+    }
   </script>
 </body>
 </html>

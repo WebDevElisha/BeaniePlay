@@ -242,7 +242,7 @@
       </div>
     </div>
   </div>
-  <script>
+    <script>
     /* Elements */
     const startup = document.getElementById('startup');
     const createPlaylistBtn = document.getElementById('createPlaylistBtn');
@@ -281,8 +281,6 @@
         return raw ? JSON.parse(raw) : [];
       } catch { return []; }
     }
-
-    /* Dedup by name|size|lastModified */
     function addUniqueFiles(existing, incoming) {
       const seen = new Set(existing.map(f => `${f.name}|${f.size}|${f.lastModified}`));
       const out = [];
@@ -292,66 +290,61 @@
       }
       return out;
     }
-
-    /* Create playlist (files) */
     createPlaylistBtn.addEventListener('click', () => {
       popup.classList.remove('hidden');
       popupTitle.textContent = 'Name your playlist';
       popupInput.placeholder = 'My Playlist';
       popupInput.value = '';
-      popupConfirmBtn.onclick = () => {
-        const name = popupInput.value.trim() || `Playlist ${playlists.length + 1}`;
-        popup.classList.add('hidden');
-        const onNewFiles = () => {
-          const selection = Array.from(newFileInput.files);
-          const unique = addUniqueFiles([], selection);
-          if (unique.length > 0) {
-            playlists.push({ name, type: 'files', files: unique, loop: false, shuffle: false });
-            renderPlaylists();
-            postCreateReveal();
-            saveMeta();
-          }
-          newFileInput.value = '';
-          newFileInput.removeEventListener('change', onNewFiles);
-        };
-        newFileInput.addEventListener('change', onNewFiles, { once: true });
-        newFileInput.click();
-      };
+      popupConfirmBtn.onclick = handleCreateFilesPlaylist;
     });
 
-    /* Create YouTube playlist */
+    function handleCreateFilesPlaylist() {
+      const name = popupInput.value.trim() || `Playlist ${playlists.length + 1}`;
+      popup.classList.add('hidden');
+      newFileInput.addEventListener('change', function onNewFiles() {
+        const selection = Array.from(newFileInput.files);
+        const unique = addUniqueFiles([], selection);
+        if (unique.length > 0) {
+          playlists.push({ name, type: 'files', files: unique, loop: false, shuffle: false });
+          renderPlaylists();
+          postCreateReveal();
+          saveMeta();
+        }
+        newFileInput.value = '';
+        newFileInput.removeEventListener('change', onNewFiles);
+      });
+      newFileInput.click();
+    }
     createYouTubeBtn.addEventListener('click', () => {
       popup.classList.remove('hidden');
       popupTitle.textContent = 'Enter a YouTube URL';
       popupInput.placeholder = 'https://www.youtube.com/watch?v=...';
       popupInput.value = '';
-      popupConfirmBtn.onclick = () => {
-        const url = popupInput.value.trim();
-        if (!url) { popup.classList.add('hidden'); return; }
-        playlists.push({
-          name: 'YouTube',
-          type: 'youtube',
-          ytUrl: url,
-          files: [],
-          loop: false,
-          shuffle: false
-        });
-        popup.classList.add('hidden');
-        renderPlaylists();
-        postCreateReveal();
-        saveMeta();
-      };
+      popupConfirmBtn.onclick = handleCreateYouTubePlaylist;
     });
 
-    /* Helper: After first playlist, reveal player area */
+    function handleCreateYouTubePlaylist() {
+      const url = popupInput.value.trim();
+      if (!url) { popup.classList.add('hidden'); return; }
+      playlists.push({
+        name: 'YouTube',
+        type: 'youtube',
+        ytUrl: url,
+        files: [],
+        loop: false,
+        shuffle: false
+      });
+      popup.classList.add('hidden');
+      renderPlaylists();
+      postCreateReveal();
+      saveMeta();
+    }
     function postCreateReveal() {
       startup.classList.add('hidden');
       audioPlayer.style.display = 'block';
       nowPlaying.style.display = 'block';
       resizeCardsForCount();
     }
-
-    /* Resize/expand cards when only one playlist exists */
     function resizeCardsForCount() {
       const count = playlists.length;
       const cards = cardsContainer.querySelectorAll('.playlist-card');
@@ -360,8 +353,6 @@
         else card.classList.remove('single-expand');
       });
     }
-
-    /* Rendering playlists */
     function renderPlaylists() {
       cardsContainer.innerHTML = '';
       playlists.forEach((p, index) => {
@@ -386,8 +377,6 @@
 
         header.appendChild(title);
         header.appendChild(toggle);
-
-        /* File list or YouTube info */
         const list = document.createElement('div');
         list.className = 'file-list';
         if (p.type === 'files') {
@@ -400,8 +389,6 @@
           item.draggable = false;
           list.appendChild(item);
         }
-
-        /* Controls toolbar */
         const controls = document.createElement('div');
         controls.className = 'card-controls';
 
@@ -462,9 +449,11 @@
 
     function makeIconBtn(label, primary, action) {
       const btn = document.createElement('button');
-      btn.className = 'icon-btn' + (primary ? ' primary' : '');
-      btn.textContent = label;
+      btn.className = 'icon-btn' + (primary ? ' primary' :      btn.textContent = label;
       btn.onclick = action;
+      return btn;
+    }
+
     /* Build file list with drag-and-drop + per-file delete */
     function updateFileList(container, files, playlistIndex) {
       container.innerHTML = '';
@@ -527,8 +516,6 @@
         container.appendChild(item);
       });
     }
-
-    /* Playback logic */
     let shuffleQueue = [];
 
     function playPlaylist(index) {
@@ -622,8 +609,6 @@
         playTrack();
       };
     }
-
-    /* YouTube embed (audio-only intent) */
     let ytContainer = null;
     function playYouTube(url) {
       const id = extractYouTubeId(url);
@@ -656,7 +641,6 @@
         return null;
       } catch { return null; }
     }
-
     /* Lifecycle */
     window.addEventListener('DOMContentLoaded', () => {
       const meta = loadMeta();
@@ -685,6 +669,10 @@
       if (e.target === popup) popup.classList.add('hidden');
     });
 
+    popupCancelBtn.addEventListener('click', () => {
+      popup.classList.add('hidden');
+    });
+
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, s => ({
         '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -693,3 +681,4 @@
   </script>
 </body>
 </html>
+
